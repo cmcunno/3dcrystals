@@ -1,0 +1,802 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Crystal Point Cloud</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>:root{--bg:#f3f6f9;--card:#fff;--fg:#0d1a26;--muted:#566878;--line:#d3dce5;--accent:#1c6fd6;--accent-fg:#fff;--soft:#e7eff9;--warn:#a85a00;--ok:#16794a;--stage:#070b10;--r:12px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1017;--card:#111a24;--fg:#e5edf5;--muted:#8a9fb2;--line:#22313f;--accent:#6cb4ff;--accent-fg:#06121f;--soft:#162534;--warn:#f0b35c;--ok:#5fd09a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0a1017;--card:#111a24;--fg:#e5edf5;--muted:#8a9fb2;--line:#22313f;--accent:#6cb4ff;--accent-fg:#06121f;--soft:#162534;--warn:#f0b35c;--ok:#5fd09a;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 Inter,system-ui,sans-serif;padding-block:18px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto}
+header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+h1{font:600 22px/1.2 'Space Grotesk',Inter,sans-serif;margin:0;letter-spacing:-.01em}
+header span{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}.stage-col{order:-1;position:static!important}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.stage-col{position:sticky;top:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:14px;text-align:center;color:var(--muted);cursor:pointer;display:flex;gap:12px;align-items:center;justify-content:center;min-height:64px}
+.drop.on{border-color:var(--accent);background:var(--soft)}
+.drop img{height:48px;width:48px;object-fit:cover;border-radius:6px;background:#000}
+.drop b{color:var(--fg);font-weight:600}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.steps button{font:500 12px/1.2 Inter,sans-serif;border:1px solid var(--line);background:transparent;color:var(--muted);padding:8px 4px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;gap:2px;align-items:center}
+.steps button i{font:600 13px 'Space Grotesk',sans-serif;font-style:normal}
+.steps button[aria-current="step"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+h2{font:600 16px 'Space Grotesk',sans-serif;margin:0}
+label,.lab{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px}
+.field{display:flex;flex-direction:column;min-width:0}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1 1 70px;min-width:0}
+input[type=number],textarea{width:100%;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{resize:vertical;min-height:58px}
+.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{flex:1;border:0;background:transparent;color:var(--fg);padding:9px 6px;font:500 14px Inter,sans-serif;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:99px;padding:6px 11px;font:500 13px Inter,sans-serif;cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--soft);border-color:var(--accent);color:var(--accent)}
+.qcards{display:grid;gap:8px}
+.q{border:1px solid var(--line);border-radius:10px;padding:11px 12px;cursor:pointer;background:transparent;color:var(--fg);text-align:left;font:inherit;display:grid;grid-template-columns:1fr auto;gap:2px 10px}
+.q[aria-pressed="true"]{border-color:var(--accent);background:var(--soft)}
+.q b{font:600 15px 'Space Grotesk',sans-serif}
+.q small{color:var(--muted);font-size:12px}
+.q .r{text-align:right;font-size:12px;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+summary{cursor:pointer;font-weight:600;font-size:13px}
+.sl{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin-top:10px;font-size:13px}
+.sl output{color:var(--muted);font-variant-numeric:tabular-nums}
+.sl input{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+.chk{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px}
+.nav{display:flex;gap:8px;justify-content:space-between}
+.btn{font:600 14px Inter,sans-serif;border-radius:9px;padding:10px 16px;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn:disabled{opacity:.45;cursor:default}
+.note{font-size:12px;color:var(--muted)}
+.warn{color:var(--warn);font-size:13px}
+.ok{color:var(--ok)}
+.tabs{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tabs .seg{flex:0 1 auto}
+.tabs .seg button{padding:7px 14px;font-size:13px}
+.view{background:var(--stage);border-radius:var(--r);overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:300px;position:relative;touch-action:none}
+.view canvas{display:block;max-width:100%;max-height:72vh;width:auto;height:auto}
+.view .empty{color:#7d8fa0;padding:40px 20px;text-align:center;font-size:14px}
+.busy{position:absolute;top:10px;right:12px;font-size:12px;color:#9fc4ee;background:#0d1721cc;padding:3px 9px;border-radius:99px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.stat b{display:block;font:600 17px 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.card{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.card dl{margin:0;display:grid;grid-template-columns:auto 1fr}
+.card dt,.card dd{margin:0;padding:7px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.card dt{color:var(--muted)}
+.card dd{text-align:right;font-variant-numeric:tabular-nums;font-weight:500}
+.card dl>:nth-last-child(-n+2){border-bottom:0}
+.card h3{margin:0;padding:8px 12px;background:var(--soft);font:600 12px Inter,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.hide{display:none!important}
+</style>
+<div class="wrap">
+<header><h1>Crystal Point Cloud</h1><span>Picture to PLY for inner engraving · xTool F2 Ultra UV 5 W</span></header>
+<div class="grid">
+<div class="panel" id="panel">
+  <label class="drop" id="drop"><input type="file" id="file" accept="image/png,image/jpeg,image/webp" hidden>
+    <img id="thumb" class="hide" alt=""><span id="dropTxt"><b>Choose a picture</b><br>PNG or JPG. Transparent or black background, already cut out.</span></label>
+  <div class="steps" id="steps"></div>
+
+  <section data-step="0">
+    <h2>Crystal size</h2>
+    <div class="field" style="margin:10px 0"><span class="lab">Preset</span><div class="chips" id="presets"></div></div>
+    <div class="row">
+      <div class="field"><label for="cw">Width mm</label><input type="number" id="cw" min="10" max="150" step="1"></div>
+      <div class="field"><label for="ch">Height mm</label><input type="number" id="ch" min="10" max="150" step="1"></div>
+      <div class="field"><label for="cd">Depth mm</label><input type="number" id="cd" min="10" max="150" step="1"></div>
+    </div>
+    <p class="note" id="limits"></p>
+  </section>
+
+  <section data-step="1" class="hide">
+    <h2>Design and engraving</h2>
+    <div class="field" style="margin:10px 0"><span class="lab">3D effect</span><div class="seg" id="effect"></div></div>
+    <div class="field" style="margin:10px 0"><span class="lab">Mask shape</span><div class="seg" id="shape"></div></div>
+    <div class="field" style="margin:10px 0"><label for="text">Caption (optional, up to 2 lines)</label><textarea id="text" maxlength="80" placeholder="Anna &amp; Tom · 12 June 2026"></textarea></div>
+    <details><summary>Fine-tune</summary>
+      <div id="tune"></div>
+      <label class="chk"><input type="checkbox" id="mirror"> Mirror picture (for engraving seen from the back)</label>
+      <div class="field" style="margin-top:12px"><label for="dmfile">Depth map (optional)</label>
+        <input type="file" id="dmfile" accept="image/png,image/jpeg,image/webp">
+        <p class="note">Grey image, same framing as the picture, white = nearest. Replaces the automatic depth.</p></div>
+    </details>
+  </section>
+
+  <section data-step="2" class="hide">
+    <h2>Quality</h2>
+    <div class="qcards" id="qcards" style="margin-top:10px"></div>
+    <p class="note">Higher quality means a finer grid and taller stacks of dots per column. Premium produces millions of points.</p>
+  </section>
+
+  <section data-step="3" class="hide">
+    <h2>Generate file</h2>
+    <div id="recipe" style="margin-top:10px"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn pri" id="gen">Generate PLY</button>
+      <button class="btn hide" id="save">Save</button>
+      <button class="btn" id="saveR">Save recipe</button>
+    </div>
+    <p class="note" id="genMsg"></p>
+  </section>
+
+  <div class="nav"><button class="btn" id="back">Back</button><button class="btn pri" id="next">Next</button></div>
+</div>
+
+<div class="stage-col">
+  <div class="tabs"><div class="seg" id="tabs"></div>
+    <div class="seg hide" id="angles"></div></div>
+  <div class="view" id="view"><div class="empty" id="empty">Choose a picture to see the dot preview.</div>
+    <canvas id="cv" class="hide"></canvas><span class="busy hide" id="busy">Working…</span></div>
+  <div class="stats" id="stats"></div>
+  <p class="note" id="warnBox"></p>
+</div>
+</div></div>
+<script>
+'use strict';
+/* ===== Crystal point-cloud engine: pure functions, no DOM =====
+   Layout of every cloud (measured from a reference xTool cloud):
+   x = picture width, y = depth (up, nearer the viewer is higher), z = picture rows running downward.
+   Each picture cell becomes a column of 0..maxStack dots, stacked every `gap` mm toward the back. */
+
+/* Tone curve: picture tone (0..1) -> mean dots per column (0..6).
+   Values read from how a reference cloud (0.05 mm grid, 6-dot stacks) mapped the tones of its own source photo. */
+const TONE_TABLE = [[0,0],[0.10,0.05],[0.16,0.30],[0.20,1.00],[0.30,1.80],[0.40,2.30],[0.50,2.80],[0.60,3.80],[0.70,4.90],[0.80,5.60],[0.90,5.85],[1,6]];
+const TONE_LUT = (() => {
+  const n = 1024, o = new Float32Array(n + 1);
+  for (let i = 0; i <= n; i++) {
+    const t = i / n; let k = 1;
+    while (k < TONE_TABLE.length - 1 && TONE_TABLE[k][0] < t) k++;
+    const a = TONE_TABLE[k - 1], b = TONE_TABLE[k];
+    o[i] = a[1] + (b[1] - a[1]) * (t - a[0]) / (b[0] - a[0]);
+  }
+  return o;
+})();
+function toneCount(t) { t = t < 0 ? 0 : t > 1 ? 1 : t; return TONE_LUT[(t * 1024) | 0]; }
+
+/* ---------- blur helpers (running-sum box passes, three of them approximate a Gaussian) ---------- */
+function blurH(a, o, W, H, r) {
+  const inv = 1 / (2 * r + 1);
+  for (let y = 0; y < H; y++) {
+    const row = y * W; let s = 0;
+    for (let i = -r; i <= r; i++) s += a[row + (i < 0 ? 0 : i > W - 1 ? W - 1 : i)];
+    for (let x = 0; x < W; x++) {
+      o[row + x] = s * inv;
+      const add = x + r + 1 > W - 1 ? W - 1 : x + r + 1, sub = x - r < 0 ? 0 : x - r;
+      s += a[row + add] - a[row + sub];
+    }
+  }
+}
+function blurV(a, o, W, H, r) {
+  const inv = 1 / (2 * r + 1), s = new Float64Array(W);
+  for (let j = -r; j <= r; j++) { const row = (j < 0 ? 0 : j > H - 1 ? H - 1 : j) * W; for (let x = 0; x < W; x++) s[x] += a[row + x]; }
+  for (let y = 0; y < H; y++) {
+    const ro = y * W, ra = (y + r + 1 > H - 1 ? H - 1 : y + r + 1) * W, rs = (y - r < 0 ? 0 : y - r) * W;
+    for (let x = 0; x < W; x++) { o[ro + x] = s[x] * inv; s[x] += a[ra + x] - a[rs + x]; }
+  }
+}
+function gauss(a, W, H, sigma) {
+  if (sigma < 0.6) return a;
+  const r = Math.max(1, Math.round(Math.sqrt(0.25 + sigma * sigma) - 0.5));
+  const t = new Float32Array(W * H), b1 = new Float32Array(W * H), b2 = new Float32Array(W * H);
+  blurH(a, t, W, H, r); blurV(t, b1, W, H, r);
+  blurH(b1, t, W, H, r); blurV(t, b2, W, H, r);
+  blurH(b2, t, W, H, r); blurV(t, b1, W, H, r);
+  return b1;
+}
+/* blur that ignores cells outside the picture (normalised convolution) */
+function gaussMasked(a, valid, W, H, sigma, validBlur) {
+  const N = W * H, aw = new Float32Array(N);
+  for (let i = 0; i < N; i++) aw[i] = valid[i] ? a[i] : 0;
+  const num = gauss(aw, W, H, sigma), den = validBlur || gauss(Float32Array.from(valid), W, H, sigma);
+  const out = new Float32Array(N);
+  for (let i = 0; i < N; i++) out[i] = den[i] > 1e-4 ? num[i] / den[i] : a[i];
+  return out;
+}
+
+/* distance (in cells) to the nearest empty cell; the frame edge does not count as an edge */
+function chamfer(mask, W, H) {
+  const INF = 1e9, d = new Float32Array(W * H), B = 1.4142;
+  let anyZero = false;
+  for (let i = 0; i < W * H; i++) { d[i] = mask[i] ? INF : 0; if (!mask[i]) anyZero = true; }
+  if (!anyZero) {
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) d[y * W + x] = Math.min(x, y, W - 1 - x, H - 1 - y) + 1;
+    return d;
+  }
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x; if (!d[i]) continue; let v = d[i];
+    if (x > 0 && d[i - 1] + 1 < v) v = d[i - 1] + 1;
+    if (y > 0) {
+      if (d[i - W] + 1 < v) v = d[i - W] + 1;
+      if (x > 0 && d[i - W - 1] + B < v) v = d[i - W - 1] + B;
+      if (x < W - 1 && d[i - W + 1] + B < v) v = d[i - W + 1] + B;
+    }
+    d[i] = v;
+  }
+  for (let y = H - 1; y >= 0; y--) for (let x = W - 1; x >= 0; x--) {
+    const i = y * W + x; if (!d[i]) continue; let v = d[i];
+    if (x < W - 1 && d[i + 1] + 1 < v) v = d[i + 1] + 1;
+    if (y < H - 1) {
+      if (d[i + W] + 1 < v) v = d[i + W] + 1;
+      if (x < W - 1 && d[i + W + 1] + B < v) v = d[i + W + 1] + B;
+      if (x > 0 && d[i + W - 1] + B < v) v = d[i + W - 1] + B;
+    }
+    d[i] = v;
+  }
+  for (let i = 0; i < W * H; i++) if (d[i] > 1e8) d[i] = 0;   // cells with no reachable edge
+  return d;
+}
+
+function percentile(values, valid, q, lo, hi, bins) {
+  const h = new Float64Array(bins); let n = 0; const sc = (bins - 1) / (hi - lo);
+  for (let i = 0; i < values.length; i++) if (valid[i]) { let b = Math.round((values[i] - lo) * sc); b = b < 0 ? 0 : b > bins - 1 ? bins - 1 : b; h[b]++; n++; }
+  if (!n) return lo;
+  let c = 0; const target = n * q;
+  for (let b = 0; b < bins; b++) { c += h[b]; if (c >= target) return lo + b / sc; }
+  return hi;
+}
+
+/* error diffusion to whole dots per column (serpentine Floyd-Steinberg) */
+function diffuse(target, valid, W, H, maxN) {
+  const out = new Uint8Array(W * H);
+  let e0 = new Float32Array(W + 2), e1 = new Float32Array(W + 2);
+  for (let y = 0; y < H; y++) {
+    const ltr = (y & 1) === 0; e1.fill(0);
+    for (let s = 0; s < W; s++) {
+      const x = ltr ? s : W - 1 - s, i = y * W + x;
+      if (!valid[i]) continue;
+      const v = target[i] + e0[x + 1];
+      let q = Math.round(v); q = q < 0 ? 0 : q > maxN ? maxN : q;
+      out[i] = q;
+      let er = v - q; er = er > 1.5 ? 1.5 : er < -1.5 ? -1.5 : er;
+      if (ltr) { e0[x + 2] += er * 0.4375; e1[x] += er * 0.1875; e1[x + 1] += er * 0.3125; e1[x + 2] += er * 0.0625; }
+      else { e0[x] += er * 0.4375; e1[x + 2] += er * 0.1875; e1[x + 1] += er * 0.3125; e1[x] += er * 0.0625; }
+    }
+    const t = e0; e0 = e1; e1 = t;
+  }
+  return out;
+}
+
+/* ---------- automatic depth ----------
+   Rounded subject (each blob gets its own dome, so a big white dress does not push to the front),
+   lifted where the picture has fine detail (faces, hair), with a gentle centre bias. */
+function localMax(d, W, H, f, rc) {
+  const cw = Math.ceil(W / f), ch = Math.ceil(H / f), c = new Float32Array(cw * ch);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const j = ((y / f) | 0) * cw + ((x / f) | 0); if (d[y * W + x] > c[j]) c[j] = d[y * W + x]; }
+  const t = new Float32Array(cw * ch), o = new Float32Array(cw * ch);
+  for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) { let m = 0; for (let k = Math.max(0, x - rc); k <= Math.min(cw - 1, x + rc); k++) if (c[y * cw + k] > m) m = c[y * cw + k]; t[y * cw + x] = m; }
+  for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) { let m = 0; for (let k = Math.max(0, y - rc); k <= Math.min(ch - 1, y + rc); k++) if (t[k * cw + x] > m) m = t[k * cw + x]; o[y * cw + x] = m; }
+  const full = new Float32Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) full[y * W + x] = o[((y / f) | 0) * cw + ((x / f) | 0)];
+  return gauss(full, W, H, f);
+}
+function autoDepth(L, A, W, H, sp, valid) {
+  const N = W * H, mask = new Uint8Array(N);
+  for (let i = 0; i < N; i++) mask[i] = valid[i];
+  const dist = chamfer(mask, W, H);
+  const f = 8, rc = Math.max(3, Math.round(0.16 * Math.max(W, H) / f));
+  const lmax = localMax(dist, W, H, f, rc);
+  /* fine-detail energy */
+  const fine = gaussMasked(L, mask, W, H, 0.6 / sp), e = new Float32Array(N);
+  for (let i = 0; i < N; i++) e[i] = mask[i] ? Math.abs(L[i] - fine[i]) : 0;
+  const sal = gaussMasked(e, mask, W, H, 3.0 / sp);
+  const sHi = Math.max(1e-3, percentile(sal, mask, 0.97, 0, 1, 1024));
+  let sx = 0, sy = 0, n = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (mask[y * W + x]) { sx += x; sy += y; n++; }
+  const cx = n ? sx / n : W / 2, cy = n ? sy / n : H / 2;
+  let vx = 0, vy = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (mask[y * W + x]) { vx += (x - cx) * (x - cx); vy += (y - cy) * (y - cy); }
+  const gx = Math.max(8, Math.sqrt(vx / Math.max(1, n)) * 1.6), gy = Math.max(8, Math.sqrt(vy / Math.max(1, n)) * 1.6);
+  const d0 = new Float32Array(N);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x; if (!mask[i]) continue;
+    const pn = Math.pow(Math.min(1, dist[i] / Math.max(4, lmax[i])), 0.6);
+    const sn = Math.min(1, sal[i] / sHi);
+    const g = Math.exp(-0.5 * ((x - cx) * (x - cx) / (gx * gx) + (y - cy) * (y - cy) / (gy * gy)));
+    d0[i] = 0.45 * pn + 0.35 * sn + 0.20 * g;
+  }
+  return normaliseDepth(gaussMasked(d0, mask, W, H, 1.0 / sp), mask, N);
+}
+function normaliseDepth(d, mask, N) {
+  const lo = percentile(d, mask, 0.02, 0, 1.5, 512), hi = Math.max(lo + 0.02, percentile(d, mask, 0.98, 0, 1.5, 512));
+  const o = new Float32Array(N);
+  for (let i = 0; i < N; i++) { let v = (d[i] - lo) / (hi - lo); o[i] = v < 0 ? 0 : v > 1 ? 1 : v; }
+  return o;
+}
+
+/* ---------- main run ----------
+   inp : {W,H,sp,picRows,rgba,shapeA,textA,depthMap}
+   par : {effectSpan, bright, contrast, shadow, sharp, maxStack, gap}                              */
+function runEngine(inp, par) {
+  const { W, H, sp, picRows, rgba, shapeA, textA, depthMap } = inp, N = W * H;
+  const L = new Float32Array(N), A = new Float32Array(N), valid = new Uint8Array(N);
+  const picN = picRows * W;
+  for (let i = 0; i < picN; i++) {
+    const j = i * 4; let a = rgba[j + 3] / 255;
+    if (shapeA) a *= shapeA[i] / 255;
+    A[i] = a; valid[i] = a >= 0.5 ? 1 : 0;
+    L[i] = (0.2126 * rgba[j] + 0.7152 * rgba[j + 1] + 0.0722 * rgba[j + 2]) / 255;
+  }
+  /* auto levels on the subject */
+  let lo = percentile(L, valid, 0.01, 0, 1, 256), hi = percentile(L, valid, 0.995, 0, 1, 256);
+  if (hi - lo < 0.18) { const m = (hi + lo) / 2; lo = Math.max(0, m - 0.09); hi = Math.min(1, m + 0.09); }
+  let t = new Float32Array(N);
+  for (let i = 0; i < N; i++) { const v = (L[i] - lo) / (hi - lo); t[i] = v < 0 ? 0 : v > 1 ? 1 : v; }
+  /* detail: small and large radius unsharp, computed only from picture cells */
+  const k = par.sharp / 100;
+  if (k > 0) {
+    const vb1 = gauss(Float32Array.from(valid), W, H, 0.20 / sp), vb2 = gauss(Float32Array.from(valid), W, H, 1.5 / sp);
+    const g1 = gaussMasked(t, valid, W, H, 0.20 / sp, vb1), g2 = gaussMasked(t, valid, W, H, 1.5 / sp, vb2);
+    for (let i = 0; i < N; i++) {
+      if (!valid[i]) continue;
+      const v = t[i] + 1.1 * k * (t[i] - g1[i]) + 0.45 * k * (t[i] - g2[i]);
+      t[i] = v < 0 ? 0 : v > 1 ? 1 : v;
+    }
+  }
+  /* brightness, contrast, shadow detail */
+  const bs = par.bright / 100 * 0.5, cf = 1 + par.contrast / 100, sh = par.shadow / 100 * 0.22;
+  const target = new Float32Array(N), ms = par.maxStack / 6;
+  for (let i = 0; i < N; i++) {
+    if (!valid[i]) continue;
+    let v = (t[i] - 0.5) * cf + 0.5 + bs; v = v < 0 ? 0 : v > 1 ? 1 : v;
+    if (sh) { const q = 1 - v; v += sh * q * q * q; v = v > 1 ? 1 : v; }
+    t[i] = v; target[i] = toneCount(v) * ms;
+  }
+  /* caption */
+  const isText = new Uint8Array(N);
+  if (textA) for (let i = 0; i < N; i++) if (textA[i] > 127) { isText[i] = 1; valid[i] = 1; target[i] = par.maxStack; t[i] = 1; }
+  const count = diffuse(target, valid, W, H, par.maxStack);
+  /* depth */
+  const picValid = new Uint8Array(N);
+  for (let i = 0; i < N; i++) picValid[i] = valid[i] && !isText[i] ? 1 : 0;
+  let depth;
+  if (depthMap) {
+    const dm = new Float32Array(N); for (let i = 0; i < N; i++) dm[i] = depthMap[i] / 255;
+    depth = normaliseDepth(gauss(dm, W, H, 0.5 / sp), picValid, N);
+  } else depth = autoDepth(t, A, W, H, sp, picValid);
+  for (let i = 0; i < N; i++) if (isText[i]) depth[i] = 1;
+  let dots = 0; for (let i = 0; i < N; i++) dots += count[i];
+  return { W, H, sp, N, count, depth, tone: t, valid, isText, dots, span: par.effectSpan, gap: par.gap, maxStack: par.maxStack, levels: [lo, hi] };
+}
+
+/* ---------- points ---------- */
+function buildPoints(res) {
+  const { W, H, sp, count, depth, span, gap } = res;
+  let n = 0; for (let i = 0; i < res.N; i++) n += count[i];
+  const pts = new Float32Array(n * 3);
+  let ymin = 1e9, ymax = -1e9;
+  for (let i = 0; i < res.N; i++) {
+    const c = count[i]; if (!c) continue;
+    const top = depth[i] * span, bot = top - (c - 1) * gap;
+    if (top > ymax) ymax = top; if (bot < ymin) ymin = bot;
+  }
+  if (n === 0) { ymin = 0; ymax = 0; }
+  const yc = (ymin + ymax) / 2, x0 = -(W - 1) * sp / 2, z0 = -(H - 1) * sp / 2;
+  let q = 0;
+  for (let j = 0; j < H; j++) {
+    const z = z0 + j * sp;
+    for (let i = 0; i < W; i++) {
+      const idx = j * W + i, c = count[idx]; if (!c) continue;
+      const x = x0 + i * sp, top = depth[idx] * span - yc;
+      for (let s = 0; s < c; s++) { pts[q++] = x; pts[q++] = top - s * gap; pts[q++] = z; }
+    }
+  }
+  return { pts, n, w: W * sp, h: H * sp, d: ymax - ymin };
+}
+
+/* ---------- PLY ---------- */
+function plyHeader(n, note) {
+  return 'ply\nformat binary_little_endian 1.0\ncomment Crystal PLY Builder\ncomment ' + (note || 'x width, y depth (up), z picture rows (down), units mm') + '\nelement vertex ' + n + '\nproperty float x\nproperty float y\nproperty float z\nend_header\n';
+}
+function plyBlob(pts, n, note) {
+  const littleEndian = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
+  let body = pts;
+  if (!littleEndian) { body = new Float32Array(pts.length); const dv = new DataView(body.buffer); for (let i = 0; i < pts.length; i++) dv.setFloat32(i * 4, pts[i], true); }
+  return new Blob([plyHeader(n, note), body], { type: 'application/octet-stream' });
+}
+
+/* ---------- estimates ---------- */
+const MS_PER_DOT = 1.38;   // calibrated from published F2 UV timings at 72% / 200 us / 60 kHz / 0.04 mm layers
+function fmtTime(dots) {
+  const s = Math.round(dots * MS_PER_DOT / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+  return h ? h + ' h ' + String(m).padStart(2, '0') + ' min' : m + ' min ' + String(r).padStart(2, '0') + ' s';
+}
+if (typeof module !== 'undefined') module.exports = { runEngine, buildPoints, plyBlob, plyHeader, toneCount, fmtTime, gauss, chamfer, diffuse };
+
+'use strict';
+/* ===== preview renderers: pure functions that return RGBA pixels ===== */
+const STAGE_BG = [7, 11, 16], DOT_HI = [214, 232, 255];
+
+/* dot map: brightness follows dots per column */
+function renderCounts(count, W, H, maxN, tone) {
+  const out = new Uint8ClampedArray(W * H * 4);
+  for (let i = 0; i < W * H; i++) {
+    const v = Math.pow(count[i] / maxN, 0.85), j = i * 4;
+    out[j] = STAGE_BG[0] + (DOT_HI[0] - STAGE_BG[0]) * v;
+    out[j + 1] = STAGE_BG[1] + (DOT_HI[1] - STAGE_BG[1]) * v;
+    out[j + 2] = STAGE_BG[2] + (DOT_HI[2] - STAGE_BG[2]) * v;
+    out[j + 3] = 255;
+  }
+  return out;
+}
+function renderGrey(values, W, H, valid, lo, hi) {
+  const out = new Uint8ClampedArray(W * H * 4);
+  for (let i = 0; i < W * H; i++) {
+    const j = i * 4;
+    if (valid && !valid[i]) { out[j] = STAGE_BG[0]; out[j + 1] = STAGE_BG[1]; out[j + 2] = STAGE_BG[2]; }
+    else { const v = 255 * Math.min(1, Math.max(0, (values[i] - lo) / (hi - lo))); out[j] = v * 0.93; out[j + 1] = v * 0.97; out[j + 2] = v; }
+    out[j + 3] = 255;
+  }
+  return out;
+}
+
+/* camera: model x right, y toward the viewer (depth), z down the picture.
+   view = {w,h,yaw,pitch,zoom,ext,gain,maxPts}; returns {pix, proj(x,y,z)->[X,Y]} */
+function makeCamera(view) {
+  const cy = Math.cos(view.yaw), sy = Math.sin(view.yaw), cp = Math.cos(view.pitch), sp = Math.sin(view.pitch);
+  const k = view.zoom * Math.min(view.w, view.h) * 0.80 / view.ext, D = view.ext * 3.2;
+  const proj = (x, y, z) => {
+    const u = x, v = -z, w = y;
+    const u1 = u * cy + w * sy, w1 = -u * sy + w * cy;
+    const v2 = v * cp - w1 * sp, w2 = v * sp + w1 * cp, f = D / (D - w2);
+    return [view.w / 2 + view.ox + u1 * k * f, view.h / 2 + view.oy - v2 * k * f, f];
+  };
+  return { proj, k, D };
+}
+function render3D(pts, n, cellMM, view) {
+  const { w, h } = view, acc = new Float32Array(w * h), cam = makeCamera(view), proj = cam.proj, k = cam.k;
+  const stride = Math.max(1, Math.ceil(n / (view.maxPts || 400000))), gain = view.gain || 0.34;
+  for (let i = (view.phase || 0) % stride; i < n; i += stride) {
+    const p = proj(pts[3 * i], pts[3 * i + 1], pts[3 * i + 2]);
+    const f = p[2], cell = cellMM * k * f, e = gain * stride * cell * cell;
+    const xi = Math.floor(p[0]), yi = Math.floor(p[1]);
+    if (cell <= 1.4) { if (xi >= 0 && yi >= 0 && xi < w && yi < h) acc[yi * w + xi] += e; }
+    else {
+      const s = Math.min(6, Math.round(cell)), ee = e / (s * s), x0 = xi - (s >> 1), y0 = yi - (s >> 1);
+      for (let yy = Math.max(0, y0); yy < Math.min(h, y0 + s); yy++) for (let xx = Math.max(0, x0); xx < Math.min(w, x0 + s); xx++) acc[yy * w + xx] += ee;
+    }
+  }
+  const pix = new Uint8ClampedArray(w * h * 4);
+  for (let i = 0; i < w * h; i++) {
+    const v = 1 - Math.exp(-acc[i]), j = i * 4, g = Math.pow(v, 0.9);
+    pix[j] = STAGE_BG[0] + (DOT_HI[0] - STAGE_BG[0]) * g;
+    pix[j + 1] = STAGE_BG[1] + (DOT_HI[1] - STAGE_BG[1]) * g;
+    pix[j + 2] = STAGE_BG[2] + (DOT_HI[2] - STAGE_BG[2]) * g + 10 * g * (1 - g);
+    pix[j + 3] = 255;
+  }
+  return { pix, proj };
+}
+if (typeof module !== 'undefined') module.exports = { renderCounts, renderGrey, render3D, makeCamera };
+
+/* ===== app ===== */
+const $ = id => document.getElementById(id);
+const QUAL = {
+  lite:     { name: 'Lite',     sp: 0.07, maxStack: 4, blurb: 'Fast, good for small crystals' },
+  standard: { name: 'Standard', sp: 0.06, maxStack: 5, blurb: 'Balanced detail and time' },
+  premium:  { name: 'Premium',  sp: 0.05, maxStack: 6, blurb: 'Millions of points, finest detail' }
+};
+const EFFECT = { low: 0.35, standard: 0.65, high: 0.90 };
+const PRESETS = [['Cube 40', 40, 40, 40], ['Cube 50', 50, 50, 50], ['Cube 60', 60, 60, 60], ['Portrait 50×70×30', 50, 70, 30], ['Landscape 70×50×30', 70, 50, 30]];
+const MARGIN = 2, GAP = 0.12, MAX_XY = 70, MAX_Z = 150, MAX_FILE_MB = 100;
+const LASER = { power: 72, pulse: 200, freq: 60, layer: 0.04 };
+const STEPS = ['Crystal', 'Design', 'Quality', 'Generate'];
+const TUNE = [['bright', 'Brightness', -40, 40, 0], ['contrast', 'Contrast', -40, 60, 0], ['shadow', 'Shadow lift', 0, 100, 25], ['sharp', 'Detail sharpening', 0, 100, 35]];
+
+const S = { img: null, imgW: 0, imgH: 0, name: 'picture', cw: 50, ch: 50, cd: 50, shape: 'none', text: '', effect: 'standard', quality: 'premium',
+  mirror: false, dm: null, tune: {}, step: 0, tab: 'dots', res: null, geo: null, pts: null, zip: null, yaw: 0.5, pitch: 0.18, zoom: 1, ox: 0, oy: 0 };
+TUNE.forEach(t => S.tune[t[0]] = t[4]);
+const fmtN = n => n.toLocaleString('en-US');
+let busyTimer = 0, runId = 0;
+
+/* ---------- UI construction ---------- */
+function seg(el, items, get, set) {
+  el.innerHTML = '';
+  items.forEach(([k, label]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.dataset.k = k;
+    b.onclick = () => { set(k); sync(); };
+    el.appendChild(b);
+  });
+  el._sync = () => [...el.children].forEach(b => b.setAttribute('aria-pressed', get() === b.dataset.k));
+}
+function build() {
+  $('steps').innerHTML = STEPS.map((s, i) => `<button type="button" data-i="${i}"><i>${i + 1}</i>${s}</button>`).join('');
+  $('steps').onclick = e => { const b = e.target.closest('button'); if (b) gotoStep(+b.dataset.i); };
+  $('presets').innerHTML = PRESETS.map((p, i) => `<button type="button" data-i="${i}">${p[0]}</button>`).join('');
+  $('presets').onclick = e => { const b = e.target.closest('button'); if (!b) return; const p = PRESETS[+b.dataset.i]; S.cw = p[1]; S.ch = p[2]; S.cd = p[3]; sync(); schedule(); };
+  ['cw', 'ch', 'cd'].forEach(id => $(id).addEventListener('input', () => { const v = parseFloat($(id).value); if (v >= 10 && v <= 150) { S[id] = v; syncPresets(); updateLimits(); schedule(); } }));
+  seg($('effect'), [['low', 'Low'], ['standard', 'Standard'], ['high', 'High']], () => S.effect, k => { S.effect = k; schedule(); });
+  seg($('shape'), [['none', 'None'], ['rounded', 'Rounded'], ['oval', 'Oval']], () => S.shape, k => { S.shape = k; schedule(); });
+  seg($('tabs'), [['dots', 'Dots'], ['3d', '3D'], ['depth', 'Depth']], () => S.tab, k => { S.tab = k; draw(); });
+  seg($('angles'), [['front', 'Front'], ['angle', 'Angle'], ['side', 'Side']], () => '', k => {
+    const a = { front: [0, 0], angle: [0.5, 0.18], side: [1.45, 0.05] }[k]; S.yaw = a[0]; S.pitch = a[1]; S.zoom = 1; S.ox = S.oy = 0; draw();
+  });
+  $('text').addEventListener('input', e => { S.text = e.target.value; schedule(); });
+  $('mirror').addEventListener('change', e => { S.mirror = e.target.checked; schedule(); });
+  $('tune').innerHTML = TUNE.map(t => `<div class="sl"><label for="t_${t[0]}" style="margin:0">${t[1]}</label><output id="o_${t[0]}"></output><input type="range" id="t_${t[0]}" min="${t[2]}" max="${t[3]}" step="1" value="${t[4]}"></div>`).join('');
+  TUNE.forEach(t => { const r = $('t_' + t[0]); const o = $('o_' + t[0]); o.textContent = r.value; r.addEventListener('input', () => { S.tune[t[0]] = +r.value; o.textContent = r.value; schedule(); }); });
+  $('qcards').innerHTML = Object.keys(QUAL).map(k => `<button type="button" class="q" data-k="${k}"><b>${QUAL[k].name}</b><span class="r" id="qr_${k}"></span><small>${QUAL[k].blurb}</small><span class="r" id="qt_${k}"></span></button>`).join('');
+  $('qcards').onclick = e => { const b = e.target.closest('button'); if (b) { S.quality = b.dataset.k; sync(); schedule(); } };
+  $('back').onclick = () => gotoStep(S.step - 1);
+  $('next').onclick = () => gotoStep(S.step + 1);
+  $('gen').onclick = generate;
+  $('saveR').onclick = saveRecipe;
+  $('save').onclick = saveZip;
+  $('file').addEventListener('change', e => e.target.files[0] && loadPicture(e.target.files[0]));
+  $('dmfile').addEventListener('change', e => e.target.files[0] && loadDepth(e.target.files[0]));
+  const dz = $('drop');
+  ['dragenter', 'dragover'].forEach(t => dz.addEventListener(t, e => { e.preventDefault(); dz.classList.add('on'); }));
+  ['dragleave', 'drop'].forEach(t => dz.addEventListener(t, e => { e.preventDefault(); dz.classList.remove('on'); }));
+  dz.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) loadPicture(f); });
+  initOrbit();
+}
+function syncPresets() { [...$('presets').children].forEach((b, i) => { const p = PRESETS[i]; b.setAttribute('aria-pressed', p[1] === S.cw && p[2] === S.ch && p[3] === S.cd); }); }
+function updateLimits() {
+  const m = [];
+  if (S.cw - 2 * MARGIN > MAX_XY || S.ch - 2 * MARGIN > MAX_XY) m.push(`The engraving area is limited to ${MAX_XY} × ${MAX_XY} mm, so the picture is scaled to fit.`);
+  if (S.cd > MAX_Z) m.push(`Depth above ${MAX_Z} mm is beyond the machine's Z range.`);
+  $('limits').textContent = m.join(' ') || 'Width and height face the viewer; depth is how far the engraving can reach into the crystal. The picture keeps a 2 mm margin.';
+}
+function sync() {
+  $('cw').value = S.cw; $('ch').value = S.ch; $('cd').value = S.cd; syncPresets(); updateLimits();
+  ['effect', 'shape', 'tabs'].forEach(i => $(i)._sync());
+  [...$('qcards').children].forEach(b => b.setAttribute('aria-pressed', b.dataset.k === S.quality));
+  [...$('steps').children].forEach((b, i) => i === S.step ? b.setAttribute('aria-current', 'step') : b.removeAttribute('aria-current'));
+  document.querySelectorAll('[data-step]').forEach(s => s.classList.toggle('hide', +s.dataset.step !== S.step));
+  $('back').disabled = S.step === 0; $('next').classList.toggle('hide', S.step === 3);
+  $('angles').classList.toggle('hide', S.tab !== '3d');
+  if (S.step === 3) renderRecipe();
+}
+function gotoStep(i) { S.step = Math.max(0, Math.min(3, i)); sync(); }
+
+/* ---------- loading ---------- */
+function readImage(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => { res({ im, url }); }; im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Could not read that image')); };
+    im.src = url;
+  });
+}
+async function loadPicture(file) {
+  try {
+    const { im, url } = await readImage(file);
+    S.img = im; S.imgW = im.naturalWidth; S.imgH = im.naturalHeight; S.name = file.name.replace(/\.[^.]+$/, '').replace(/[^\w\-]+/g, '_') || 'picture';
+    $('thumb').src = url; $('thumb').classList.remove('hide');
+    $('dropTxt').innerHTML = `<b>${file.name}</b><br>${S.imgW} × ${S.imgH} px · tap to change`;
+    S.dm = null; $('dmfile').value = ''; S.zip = null;
+    schedule(0);
+  } catch (e) { $('warnBox').textContent = e.message; }
+}
+async function loadDepth(file) {
+  try { const { im } = await readImage(file); S.dm = im; schedule(0); } catch (e) { $('warnBox').textContent = e.message; }
+}
+
+/* ---------- geometry and inputs for the engine ---------- */
+function lineList() { return S.text.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 2); }
+function geometry() {
+  const q = QUAL[S.quality], sp = q.sp, lines = lineList();
+  const capMM = lines.length ? lines.length * 4.6 + 1.6 : 0;
+  const aw = Math.min(S.cw - 2 * MARGIN, MAX_XY), ah = Math.min(S.ch - 2 * MARGIN, MAX_XY) - capMM;
+  const sc = Math.min(aw / S.imgW, ah / S.imgH), pw = S.imgW * sc, ph = S.imgH * sc;
+  const W = Math.max(8, Math.round(pw / sp)), picRows = Math.max(8, Math.round(ph / sp));
+  const capRows = lines.length ? Math.round(capMM / sp) : 0;
+  const usable = S.cd - 2 * MARGIN - (q.maxStack - 1) * GAP;
+  return { sp, W, picRows, capRows, H: picRows + capRows, lines, capMM, span: Math.max(0.5, EFFECT[S.effect] * usable), q };
+}
+function scaleTo(src, sw, sh, tw, th, mirror) {
+  let cur = src, cw = sw, ch = sh;
+  while (cw / 2 >= tw && ch / 2 >= th) {
+    const c = document.createElement('canvas'); c.width = cw = Math.floor(cw / 2); c.height = ch = Math.floor(ch / 2);
+    const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(cur, 0, 0, c.width, c.height); cur = c;
+  }
+  const out = document.createElement('canvas'); out.width = tw; out.height = th;
+  const x = out.getContext('2d', { willReadFrequently: true }); x.imageSmoothingQuality = 'high';
+  if (mirror) { x.translate(tw, 0); x.scale(-1, 1); }
+  x.drawImage(cur, 0, 0, cw, ch, 0, 0, tw, th);
+  return x.getImageData(0, 0, tw, th);
+}
+/* opaque pictures: dark pixels connected to the border count as empty background */
+function clearDarkBorder(rgba, W, Hh) {
+  const N = W * Hh; let transparent = false;
+  for (let i = 3; i < N * 4; i += 4) if (rgba[i] < 250) { transparent = true; break; }
+  if (transparent) return;
+  const dark = i => (0.2126 * rgba[i * 4] + 0.7152 * rgba[i * 4 + 1] + 0.0722 * rgba[i * 4 + 2]) < 15;
+  const seen = new Uint8Array(N), q = new Int32Array(N); let h = 0, t = 0;
+  const push = i => { if (!seen[i] && dark(i)) { seen[i] = 1; q[t++] = i; } };
+  for (let x = 0; x < W; x++) { push(x); push((Hh - 1) * W + x); }
+  for (let y = 0; y < Hh; y++) { push(y * W); push(y * W + W - 1); }
+  while (h < t) {
+    const i = q[h++], x = i % W, y = (i / W) | 0;
+    if (x > 0) push(i - 1); if (x < W - 1) push(i + 1); if (y > 0) push(i - W); if (y < Hh - 1) push(i + W);
+  }
+  for (let i = 0; i < N; i++) if (seen[i]) rgba[i * 4 + 3] = 0;
+}
+function maskAlpha(shape, W, Hh) {
+  const c = document.createElement('canvas'); c.width = W; c.height = Hh; const x = c.getContext('2d', { willReadFrequently: true });
+  x.fillStyle = '#fff'; x.beginPath();
+  if (shape === 'oval') x.ellipse(W / 2, Hh / 2, W / 2, Hh / 2, 0, 0, 7);
+  else { const r = Math.min(W, Hh) * 0.14; x.roundRect(0, 0, W, Hh, r); }
+  x.fill();
+  const d = x.getImageData(0, 0, W, Hh).data, a = new Uint8Array(W * Hh);
+  for (let i = 0; i < a.length; i++) a[i] = d[i * 4 + 3];
+  return a;
+}
+function textAlpha(g) {
+  if (!g.lines.length) return null;
+  const c = document.createElement('canvas'); c.width = g.W; c.height = g.H; const x = c.getContext('2d', { willReadFrequently: true });
+  x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  const lh = 4.6 / g.sp, fs0 = 3.9 / g.sp, top = g.picRows + (0.8 / g.sp);
+  g.lines.forEach((ln, i) => {
+    let fs = fs0; x.font = `700 ${fs}px "Space Grotesk",Inter,sans-serif`;
+    const w = x.measureText(ln).width, maxW = g.W * 0.96; if (w > maxW) { fs *= maxW / w; x.font = `700 ${fs}px "Space Grotesk",Inter,sans-serif`; }
+    x.fillText(ln, g.W / 2, top + lh * (i + 0.5));
+  });
+  const d = x.getImageData(0, 0, g.W, g.H).data, a = new Uint8Array(g.W * g.H);
+  for (let i = 0; i < a.length; i++) a[i] = d[i * 4 + 3];
+  return a;
+}
+function depthMapArray(g) {
+  if (!S.dm) return null;
+  const id = scaleTo(S.dm, S.dm.naturalWidth, S.dm.naturalHeight, g.W, g.picRows, S.mirror), a = new Uint8Array(g.W * g.H);
+  for (let i = 0; i < g.W * g.picRows; i++) a[i] = id.data[i * 4];
+  return a;
+}
+
+/* ---------- compute ---------- */
+let timer = 0;
+function schedule(delay) { clearTimeout(timer); if (!S.img) return; setBusy(true); timer = setTimeout(compute, delay === undefined ? 320 : delay); }
+function setBusy(on) { $('busy').classList.toggle('hide', !on); }
+function compute() {
+  if (!S.img) return;
+  const my = ++runId;
+  try {
+    const g = geometry(), t0 = performance.now();
+    const id = scaleTo(S.img, S.imgW, S.imgH, g.W, g.picRows, S.mirror), rgba = id.data;
+    clearDarkBorder(rgba, g.W, g.picRows);
+    const inp = { W: g.W, H: g.H, sp: g.sp, picRows: g.picRows, rgba, shapeA: S.shape === 'none' ? null : maskAlpha(S.shape, g.W, g.picRows), textA: textAlpha(g), depthMap: depthMapArray(g) };
+    if (inp.shapeA) { const f = new Uint8Array(g.W * g.H); f.set(inp.shapeA); inp.shapeA = f; }
+    const par = { effectSpan: g.span, bright: S.tune.bright, contrast: S.tune.contrast, shadow: S.tune.shadow, sharp: S.tune.sharp, maxStack: g.q.maxStack, gap: GAP };
+    S.res = runEngine(inp, par); S.geo = g; S.pts = null; S.zip = null; S.ms = performance.now() - t0;
+    $('save').classList.add('hide'); $('genMsg').textContent = '';
+    if (my === runId) { draw(); stats(); if (S.step === 3) renderRecipe(); setBusy(false); }
+  } catch (e) { console.error(e); $('warnBox').textContent = 'Preview failed: ' + e.message; setBusy(false); }
+}
+function ensurePts() { if (!S.pts) S.pts = buildPoints(S.res); return S.pts; }
+function fileMB(n) { return (n * 12 + 200) / 1048576; }
+function crystalNote() { const r = S.res; return `Cloud ${(r.W * r.sp).toFixed(1)} × ${(r.H * r.sp).toFixed(1)} mm`; }
+
+function stats() {
+  const r = S.res, g = S.geo, mb = fileMB(r.dots);
+  $('stats').innerHTML = [[r.dots >= 1e6 ? (r.dots / 1e6).toFixed(2) + ' M' : fmtN(r.dots), 'Points'], [mb.toFixed(1) + ' MB', 'PLY size'], [fmtTime(r.dots), 'Est. time'], [(r.W * r.sp).toFixed(1) + ' × ' + (r.H * r.sp).toFixed(1), 'Picture mm'], [g.span.toFixed(1) + ' mm', 'Depth span']]
+    .map(a => `<div class="stat"><b>${a[0]}</b><span>${a[1]}</span></div>`).join('');
+  const w = [];
+  if (mb > MAX_FILE_MB) w.push(`This file is over ${MAX_FILE_MB} MB, which xTool Studio may refuse. Choose a lower quality or a smaller crystal.`);
+  if (S.cd > MAX_Z) w.push('Crystal depth exceeds the machine range.');
+  $('warnBox').innerHTML = w.map(t => `<span class="warn">${t}</span>`).join('<br>');
+  Object.keys(QUAL).forEach(k => {
+    const q = QUAL[k], est = r.dots * Math.pow(r.sp / q.sp, 2) * (q.maxStack / r.maxStack);
+    $('qr_' + k).textContent = '≈ ' + (est / 1e6).toFixed(2) + ' M points'; $('qt_' + k).textContent = '≈ ' + fmtTime(est) + ' · ' + q.sp + ' mm';
+  });
+}
+
+/* ---------- drawing ---------- */
+function show(pix, w, h) {
+  const cv = $('cv'); cv.width = w; cv.height = h; cv.getContext('2d').putImageData(new ImageData(pix, w, h), 0, 0);
+  cv.classList.remove('hide'); $('empty').classList.add('hide');
+}
+function draw() {
+  if (!S.res) return;
+  const r = S.res;
+  $('angles').classList.toggle('hide', S.tab !== '3d'); $('tabs')._sync();
+  if (S.tab === 'dots') show(renderCounts(r.count, r.W, r.H, r.maxStack), r.W, r.H);
+  else if (S.tab === 'depth') show(renderGrey(r.depth, r.W, r.H, r.valid, 0, 1), r.W, r.H);
+  else draw3D(false);
+}
+function draw3D(fast) {
+  const r = S.res, p = ensurePts(), size = 760;
+  const ext = Math.max(S.cw, S.ch, S.cd) * 1.12;
+  const view = { w: size, h: size, yaw: S.yaw, pitch: S.pitch, zoom: S.zoom, ext, ox: S.ox, oy: S.oy, gain: 0.34, maxPts: fast ? 130000 : 500000 };
+  const out = render3D(p.pts, p.n, r.sp, view);
+  show(out.pix, size, size);
+  const x = $('cv').getContext('2d'), c = [S.cw / 2, S.cd / 2, S.ch / 2];
+  const P = (a, b, d) => out.proj(a * c[0], b * c[1], d * c[2]);
+  x.strokeStyle = 'rgba(140,190,255,.35)'; x.lineWidth = 1.2; x.beginPath();
+  const V = []; for (let i = 0; i < 8; i++) V.push(P(i & 1 ? 1 : -1, i & 2 ? 1 : -1, i & 4 ? 1 : -1));
+  [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]].forEach(e => { x.moveTo(V[e[0]][0], V[e[0]][1]); x.lineTo(V[e[1]][0], V[e[1]][1]); });
+  x.stroke();
+}
+let fastRaf = 0, settle = 0;
+function initOrbit() {
+  const cv = $('cv'); let drag = null;
+  const go = () => { if (fastRaf) return; fastRaf = requestAnimationFrame(() => { fastRaf = 0; draw3D(true); }); clearTimeout(settle); settle = setTimeout(() => draw3D(false), 220); };
+  cv.addEventListener('pointerdown', e => { if (S.tab !== '3d') return; drag = { x: e.clientX, y: e.clientY, pan: e.shiftKey || e.button === 2 }; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e => {
+    if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+    const k = 760 / cv.getBoundingClientRect().width;
+    if (drag.pan) { S.ox += dx * k; S.oy += dy * k; } else { S.yaw += dx * 0.008; S.pitch = Math.max(-1.4, Math.min(1.4, S.pitch + dy * 0.008)); }
+    go();
+  });
+  const up = () => { drag = null; };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('contextmenu', e => e.preventDefault());
+  cv.addEventListener('wheel', e => { if (S.tab !== '3d') return; e.preventDefault(); S.zoom = Math.max(0.4, Math.min(5, S.zoom * Math.exp(-e.deltaY * 0.0015))); go(); }, { passive: false });
+}
+
+/* ---------- recipe ---------- */
+function recipeRows() {
+  const r = S.res, g = S.geo;
+  return [
+    ['Machine', [['Laser', 'xTool F2 Ultra UV 5 W'], ['Crystal', `${S.cw} × ${S.ch} × ${S.cd} mm`], ['Picture', `${(r.W * r.sp).toFixed(1)} × ${(r.H * r.sp).toFixed(1)} mm`]]],
+    ['Point cloud', [['Quality', `${g.q.name} · ${g.q.sp} mm grid`], ['Dots per column', `0 – ${g.q.maxStack}, pitch ${GAP} mm`], ['3D effect', `${S.effect[0].toUpperCase() + S.effect.slice(1)} · ${g.span.toFixed(1)} mm deep`], ['Points', fmtN(r.dots)], ['File size', fileMB(r.dots).toFixed(1) + ' MB']]],
+    ['Laser start values', [['Power', LASER.power + ' %'], ['Pulse width', LASER.pulse + ' µs'], ['Frequency', LASER.freq + ' kHz'], ['Layer height', LASER.layer + ' mm'], ['Estimated time', fmtTime(r.dots)]]]
+  ];
+}
+function renderRecipe() {
+  if (!S.res) { $('recipe').innerHTML = '<p class="note">Choose a picture first.</p>'; return; }
+  $('recipe').innerHTML = recipeRows().map(([h, rows]) => `<div class="card" style="margin-bottom:10px"><h3>${h}</h3><dl>${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl></div>`).join('') +
+    '<p class="note">Laser values are the starting point used by commercial tools for the F2 Ultra UV. Test on a spare crystal and adjust power to taste. The time is an estimate.</p>';
+}
+function recipeText() {
+  return 'Crystal Point Cloud recipe\n\n' + recipeRows().map(([h, rows]) => h + '\n' + rows.map(([a, b]) => '  ' + a + ': ' + b).join('\n')).join('\n\n') + '\n';
+}
+let dlCap;
+async function getDl() { if (dlCap === undefined) { try { dlCap = (await window.claude?.use?.('downloads')) || null; } catch (e) { dlCap = null; } } return dlCap; }
+/* inside claude.ai the capability asks the viewer; in a normal browser a plain download link is used */
+async function save(name, data) {
+  const d = await getDl();
+  if (d) {
+    try { await d.save({ filename: name, data }); $('genMsg').innerHTML = '<span class="ok">Saved.</span>'; return true; }
+    catch (e) { $('genMsg').textContent = e.code === 'declined' ? 'Save cancelled.' : 'Save failed: ' + (e.message || e.code); return false; }
+  }
+  try {
+    const blob = data instanceof Blob ? data : new Blob([data], { type: 'text/plain' }), url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+    $('genMsg').innerHTML = '<span class="ok">Download started: ' + name + '</span>'; return true;
+  } catch (e) { $('genMsg').textContent = 'Download failed: ' + e.message; return false; }
+}
+function saveRecipe() { if (S.res) save(S.name + '_recipe.txt', recipeText()); }
+
+/* ---------- PLY + stored zip ---------- */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function zipStored(name, blob) {
+  const data = new Uint8Array(await blob.arrayBuffer()), crc = crc32(data), nm = new TextEncoder().encode(name), size = data.length;
+  const d = new Date(), dt = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(), tm = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  const lh = new DataView(new ArrayBuffer(30)); lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+  lh.setUint16(10, tm, true); lh.setUint16(12, dt, true); lh.setUint32(14, crc, true); lh.setUint32(18, size, true); lh.setUint32(22, size, true); lh.setUint16(26, nm.length, true);
+  const ch = new DataView(new ArrayBuffer(46)); ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
+  ch.setUint16(12, tm, true); ch.setUint16(14, dt, true); ch.setUint32(16, crc, true); ch.setUint32(20, size, true); ch.setUint32(24, size, true); ch.setUint16(28, nm.length, true);
+  const cdOff = 30 + nm.length + size, cdSize = 46 + nm.length;
+  const ee = new DataView(new ArrayBuffer(22)); ee.setUint32(0, 0x06054b50, true); ee.setUint16(8, 1, true); ee.setUint16(10, 1, true); ee.setUint32(12, cdSize, true); ee.setUint32(16, cdOff, true);
+  return new Blob([lh, nm, data, ch, nm, ee], { type: 'application/zip' });
+}
+async function generate() {
+  if (!S.res) { $('genMsg').textContent = 'Choose a picture first.'; return; }
+  $('gen').disabled = true; $('genMsg').textContent = 'Building points…';
+  await new Promise(r => setTimeout(r, 30));
+  try {
+    const p = ensurePts(), ply = plyBlob(p.pts, p.n);
+    $('genMsg').textContent = 'Packing…'; await new Promise(r => setTimeout(r, 30));
+    const zipMode = !!(await getDl());
+    if (zipMode) { S.zip = await zipStored(S.name + '.ply', ply); S.fileName = S.name + '.zip'; }
+    else { S.zip = ply; S.fileName = S.name + '.ply'; }
+    $('save').textContent = 'Save ' + S.fileName + ' (' + (S.zip.size / 1048576).toFixed(1) + ' MB)'; $('save').classList.remove('hide');
+    $('genMsg').innerHTML = `<span class="ok">${fmtN(p.n)} points ready.</span> ` + (zipMode ? 'The PLY is delivered inside a zip because this viewer cannot save .ply files directly. Unzip it, then import the .ply in xTool Studio.' : 'Save it, then import the .ply in xTool Studio.') +
+      (S.res.dots * 12 > MAX_FILE_MB * 1048576 ? '<br><span class="warn">Over 100 MB: Studio may reject it.</span>' : '');
+  } catch (e) { $('genMsg').textContent = 'Failed: ' + e.message; }
+  $('gen').disabled = false;
+}
+function saveZip() { if (S.zip) save(S.fileName, S.zip); }
+
+build(); sync();
+window.__app = { S, compute, geometry };
+
+</script>
+
+</body></html>
